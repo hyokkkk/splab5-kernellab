@@ -14,6 +14,23 @@ char output[MAXLEN];
 
 // todo 1 : change to kmalloc
 // todo 2 : use whole name instead of comm
+void trace_process(struct task_struct* curr){
+  if (curr->pid == 0) { return ; }
+  char temp_output[MAXLEN];
+  // init to 0
+  memset(temp_output, 0, MAXLEN);
+  // comm : 15chars
+  ssize_t temp_len= snprintf(temp_output, MAXLEN, "%s (%d)\n", curr->comm, curr->pid);
+  //append the last result 
+  snprintf(temp_output+temp_len, MAXLEN-temp_len, output);
+  //add to the total length
+  if(temp_len>= 0) { total_len+= temp_len; }
+  //update output string
+  strcpy(output, temp_output);
+  //go to parent
+  trace_process(curr->parent);
+
+}
 
 // called when cmd gets `echo 1234 >> input`.
 static ssize_t write_pid_to_input(struct file *fp, 
@@ -24,8 +41,6 @@ static ssize_t write_pid_to_input(struct file *fp,
   pid_t input_pid;
 
   memset(output, 0, MAXLEN);
-  char temp_output[MAXLEN];
-  ssize_t temp_len = 0;
 
   // Get input
   sscanf(user_buffer, "%u", &input_pid);
@@ -36,26 +51,8 @@ static ssize_t write_pid_to_input(struct file *fp,
     return -1; 
   }
 
-
-  // Tracing process tree from input_pid to init(1) process
-  while (curr->pid !=0){
-    // init to 0
-    memset(temp_output, 0, MAXLEN);
-    // comm : 15chars
-    temp_len= snprintf(temp_output, MAXLEN, "%s (%d)\n", curr->comm, curr->pid);
-    //append the last result 
-    snprintf(temp_output+temp_len, MAXLEN-temp_len, output);
-    //add to the total length
-    if(temp_len>= 0) { total_len+= temp_len; }
-    //update output string
-    strcpy(output, temp_output);
-    //go to parent
-    curr = curr -> parent;
-
-  }
-
   // Make Output Format string: process_command (process_id)
-
+  trace_process(curr);
   return length;
 }
 
