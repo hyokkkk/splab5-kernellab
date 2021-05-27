@@ -12,24 +12,22 @@ static struct task_struct *curr;
 ssize_t total_len= 0;
 char output[MAXLEN];
 
-// todo 1 : change to kmalloc
-// todo 2 : use whole name instead of comm
 void trace_process(struct task_struct* curr){
-  if (curr->pid == 0) { return ; }
-  char temp_output[MAXLEN];
   // init to 0
+  char temp_output[MAXLEN];
+  ssize_t temp_len;
   memset(temp_output, 0, MAXLEN);
+
+  if (curr->pid == 0) { return ; }
+
   // comm : 15chars
-  ssize_t temp_len= snprintf(temp_output, MAXLEN, "%s (%d)\n", curr->comm, curr->pid);
-  //append the last result 
-  snprintf(temp_output+temp_len, MAXLEN-temp_len, output);
-  //add to the total length
-  if(temp_len>= 0) { total_len+= temp_len; }
-  //update output string
-  strcpy(output, temp_output);
-  //go to parent
+  temp_len = snprintf(temp_output, MAXLEN, "%s (%d)\n", curr->comm, curr->pid);
+
+  // recursion with parent
   trace_process(curr->parent);
 
+  snprintf(output+total_len, temp_len+1, temp_output);
+  if(temp_len>= 0) { total_len += temp_len; }
 }
 
 // called when cmd gets `echo 1234 >> input`.
