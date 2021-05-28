@@ -3,16 +3,15 @@
 #include <linux/module.h>
 #include <linux/uaccess.h>
 #include <asm/pgtable.h>
+#include <linux/slab.h>
 
 MODULE_LICENSE("GPL");
 
 static struct dentry *dir, *output;
 static struct task_struct *task;
 
-/*
- * <Informations are stored in little endian.>
- * struct packet in app.c size  : 24byte(pid 8, vaddr 8, paddr 8)
-*/
+// <Informations are stored in little endian.>
+// struct packet in app.c size  : 24byte(pid 8, vaddr 8, paddr 8)
 struct packet {
   pid_t pid;            // 4byte + padding 4byte
   unsigned long vaddr;  // 8byte
@@ -25,7 +24,7 @@ static ssize_t read_output(struct file *fp,
                         loff_t *position)
 {
   struct packet pckt;
-  unsigned char kernel_buf[length];
+  unsigned char* kernel_buf = kzalloc(length, GFP_KERNEL);
 
   /* page table data */
   struct mm_struct *mm;
@@ -35,11 +34,9 @@ static ssize_t read_output(struct file *fp,
   pmd_t *pmdp;      // lv4
   pte_t *ptep;      // lv5
 
-  memset(kernel_buf, 0, length);
   if (copy_from_user(kernel_buf, user_buffer, length)) {return -1;}
-  /* 
-   * get pckt.pid and vaddr 
-  */
+
+  // get pckt.pid and vaddr 
   pckt.pid |= kernel_buf[3]; pckt.pid <<= 8;
   pckt.pid |= kernel_buf[2]; pckt.pid <<= 8;
   pckt.pid |= kernel_buf[1]; pckt.pid <<= 8;
@@ -51,16 +48,14 @@ static ssize_t read_output(struct file *fp,
   pckt.vaddr |= kernel_buf[10]; pckt.vaddr <<= 8;
   pckt.vaddr |= kernel_buf[9];  pckt.vaddr <<= 8;
   pckt.vaddr |= kernel_buf[8];
-  /* 
-   * get page table info 
-  */
+
+  // get page table info 
   if (!(task = pid_task(find_get_pid(pckt.pid), PIDTYPE_PID))) {
     printk("Cannot get task\n");
     return -1;
   }
-  /* 
-   * get Physical address
-  */
+
+  // get Physical address
   mm = task -> mm;
   pgdp = pgd_offset(mm, pckt.vaddr);
   p4dp = p4d_offset(pgdp, pckt.vaddr);
@@ -68,9 +63,9 @@ static ssize_t read_output(struct file *fp,
   pmdp = pmd_offset(pudp, pckt.vaddr);
   ptep = pte_offset_kernel(pmdp, pckt.vaddr);
   pckt.paddr = (pte_pfn(*ptep)<<12) | (pckt.vaddr&0xfff);
-  /*
-   * set kernel buffer 
-  */
+
+  // set kernel buffer 
+  kfree(kernel_buf);
   return simple_read_from_buffer(user_buffer, length, position, &pckt, length);
 }
 
