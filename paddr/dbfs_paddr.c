@@ -36,7 +36,7 @@ static ssize_t read_output(struct file *fp,
 
   if (copy_from_user(kernel_buf, user_buffer, length)) {return -1;}
 
-  // get pckt.pid and vaddr 
+  // get pckt.pid and vaddr
   pckt.pid |= kernel_buf[3]; pckt.pid <<= 8;
   pckt.pid |= kernel_buf[2]; pckt.pid <<= 8;
   pckt.pid |= kernel_buf[1]; pckt.pid <<= 8;
@@ -49,7 +49,7 @@ static ssize_t read_output(struct file *fp,
   pckt.vaddr |= kernel_buf[9];  pckt.vaddr <<= 8;
   pckt.vaddr |= kernel_buf[8];
 
-  // get page table info 
+  // get page table info
   if (!(task = pid_task(find_get_pid(pckt.pid), PIDTYPE_PID))) {
     printk("Cannot get task\n");
     return -1;
@@ -64,7 +64,7 @@ static ssize_t read_output(struct file *fp,
   ptep = pte_offset_kernel(pmdp, pckt.vaddr);
   pckt.paddr = (pte_pfn(*ptep)<<12) | (pckt.vaddr&0xfff);
 
-  // set kernel buffer 
+  // set kernel buffer
   kfree(kernel_buf);
   return simple_read_from_buffer(user_buffer, length, position, &pckt, length);
 }

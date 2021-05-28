@@ -31,9 +31,9 @@ void trace_process(struct task_struct* curr){
 }
 
 // called when cmd gets `echo 1234 >> input`.
-static ssize_t write_pid_to_input(struct file *fp, 
-                            const char __user *user_buffer, 
-                            size_t length, 
+static ssize_t write_pid_to_input(struct file *fp,
+                            const char __user *user_buffer,
+                            size_t length,
                             loff_t *position)
 {
   pid_t input_pid;
@@ -44,9 +44,9 @@ static ssize_t write_pid_to_input(struct file *fp,
   sscanf(user_buffer, "%u", &input_pid);
 
   // Find task_struct using input_pid. Hint: pid_task
-  if (!(curr = pid_task(find_vpid(input_pid), PIDTYPE_PID))){ 
+  if (!(curr = pid_task(find_vpid(input_pid), PIDTYPE_PID))){
     printk("Invalid pid\n");
-    return -1; 
+    return -1;
   }
 
   // Make Output Format string: process_command (process_id)
@@ -54,12 +54,12 @@ static ssize_t write_pid_to_input(struct file *fp,
   return length;
 }
 
-static ssize_t read_output_from_ptreefile(struct file *fp, 
-                                          char __user *user_buffer, 
-                                          size_t length, 
+static ssize_t read_output_from_ptreefile(struct file *fp,
+                                          char __user *user_buffer,
+                                          size_t length,
                                           loff_t *position)
 {
-  // read the output from kernel buffer to user buffer
+  // read the output from user buffer to kernel buffer
   return simple_read_from_buffer(user_buffer, length, position, output, total_len);
 }
 
@@ -86,7 +86,7 @@ static int __init dbfs_module_init(void)
     printk("Cannot create ptreefile\n");
     return -1;
   }
-  
+
   printk("dbfs_ptree module initialize done\n");
 
   return 0;
