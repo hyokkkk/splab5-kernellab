@@ -59,7 +59,7 @@ static ssize_t read_output_from_ptreefile(struct file *fp,
                                           size_t length,
                                           loff_t *position)
 {
-  // read the output from user buffer to kernel buffer
+  // read the output from buffer to user space
   return simple_read_from_buffer(user_buffer, length, position, output, total_len);
 }
 

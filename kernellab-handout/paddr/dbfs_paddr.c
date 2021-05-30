@@ -64,7 +64,7 @@ static ssize_t read_output(struct file *fp,
   ptep = pte_offset_kernel(pmdp, pckt.vaddr);
   pckt.paddr = (pte_pfn(*ptep)<<12) | (pckt.vaddr&0xfff);
 
-  // set kernel buffer
+  // send info to user buffer
   kfree(kernel_buf);
   return simple_read_from_buffer(user_buffer, length, position, &pckt, length);
 }
